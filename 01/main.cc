@@ -20,6 +20,7 @@ int mul_add(int x, int y, int z) {
 Module* makeLLVMModule();
 
 int main(int argc, char** argv) {
+
 	cout << "Creating module ..." << endl;
 
 	// Create a module. A module contains
@@ -60,19 +61,22 @@ Module* makeLLVMModule() {
 	// we can just cast c to Function*
 	Constant* c = mod->getOrInsertFunction(
 																				 "mul_add", 
+										 					 /* ret */ IntegerType::get(getGlobalContext(), 32),
+															/* args */ IntegerType::get(getGlobalContext(), 32),
 																				 IntegerType::get(getGlobalContext(), 32),
 																				 IntegerType::get(getGlobalContext(), 32),
-																				 IntegerType::get(getGlobalContext(), 32),
-																				 NULL);
+  							 /*terminated with null*/ NULL);
 
 	cout << "cast ..." << endl;
 
 	Function* mul_add = cast<Function>(c);
-
-	cout << "args ..." << endl;
 	
 	// Set calling convention to be the C calling convention
 	// Ensures that will interop properly with C
+	mul_add->setCallingConv(CallingConv::C);
+
+	cout << "args ..." << endl;
+
 	// Also, give names to the parameters; its cute
 	Function::arg_iterator args = mul_add->arg_begin();
 	Value* x = args++;
