@@ -7,8 +7,10 @@
 #include <llvm/Assembly/PrintModulePass.h>
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
+#include <iostream>
 
 using namespace llvm;
+using namespace std;
 
 // *The* ultimate function
 int mul_add(int x, int y, int z) {
@@ -18,17 +20,25 @@ int mul_add(int x, int y, int z) {
 Module* makeLLVMModule();
 
 int main(int argc, char** argv) {
+	cout << "Creating module ..." << endl;
+
 	// Create a module. A module contains
 	// global vars, fucntion decl and implementations
 	Module* Mod = makeLLVMModule();
 	
+	cout << "Verifying module ..." << endl;
+
 	// Run verifier
 	verifyModule(*Mod, PrintMessageAction);
+
+	cout << "PassManager ... " << endl;
 
 	// Managing optimizations; schedules/invokes/.. passes
 	PassManager PM;
 	PM.add(createPrintModulePass(&outs()));
 	PM.run(*Mod);
+
+	cout << "Ending ..." << endl;
 
 	delete Mod;
 
@@ -36,9 +46,13 @@ int main(int argc, char** argv) {
 }
 
 Module* makeLLVMModule() {
+	cout << "new Module ..." << endl;
+
 	// Module construction
 	// Create a module and give it a name
 	Module* mod = new Module("test", getGlobalContext());
+
+	cout << "get or insert ... " << endl;
 	
 	// Start constructing function; name, return type, arg types
 	// This wil return a cast of the existing function if it already
@@ -50,7 +64,12 @@ Module* makeLLVMModule() {
 																				 IntegerType::get(getGlobalContext(), 32),
 																				 IntegerType::get(getGlobalContext(), 32),
 																				 NULL);
+
+	cout << "cast ..." << endl;
+
 	Function* mul_add = cast<Function>(c);
+
+	cout << "args ..." << endl;
 	
 	// Set calling convention to be the C calling convention
 	// Ensures that will interop properly with C
@@ -63,6 +82,8 @@ Module* makeLLVMModule() {
 	Value* z = args++;
 	z->setName("z");
 
+	cout << "blocks ..." << endl;
+
 	// At this point, we have a function
 	// However, it doesnt have a body ... yet
 	// To create a body, we need to use blocks
@@ -74,5 +95,7 @@ Module* makeLLVMModule() {
 	Value* tmp2 = builder.CreateBinOp(Instruction::Add, tmp, x, "tmp2");
 	builder.CreateRet(tmp2);
 
+	cout << "returning ... " << endl;
+ 
 	return mod;
 }
