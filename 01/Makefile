@@ -1,4 +1,4 @@
-FLAGS=-I/usr/lib/llvm-2.8/include  -DNDEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -L/usr/lib/llvm-2.8/lib  -lpthread -lffi -ldl -lm -lLLVMCore -lLLVMSupport -lLLVMSystem -L/usr/lib/llvm-2.8/libx
+FLAGS=`llvm-config --cxxflags --ldflags --libs core`
 
 TARGET=main.o
 
