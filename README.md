@@ -4,8 +4,14 @@ Several tutorials using LLVM...
 
 
 ## Links
+
+### Done
+
 http://llvm.org/releases/2.6/docs/tutorial/JITTutorial1.html
 http://llvm.org/releases/2.6/docs/tutorial/JITTutorial2.html
+
+### To check ...
+
 http://llvm.org/releases/2.8/docs/tutorial/
 http://zathras.de/angelweb/blog-llvm-tutorial-link.htm
 
