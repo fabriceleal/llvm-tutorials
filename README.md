@@ -21,3 +21,5 @@ http://www.ibm.com/developerworks/opensource/library/os-createcompilerllvm2/inde
 (Duplicated?)
 http://www.ibm.com/developerworks/library/os-createcompilerllvm1/index.html
 http://www.ibm.com/developerworks/library/os-createcompilerllvm2/index.html
+
+http://llvm.org/docs/tutorial/index.html
