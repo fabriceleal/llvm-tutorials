@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include <cstdlib>
 
+#ifndef DEF_KALEID_LEXER
+#define DEF_KALEID_LEXER
+
 // LEXER
 // from http://llvm.org/releases/2.8/docs/tutorial/LangImpl1.html
+
 
 enum Token {
 	tok_eof = -1,
@@ -15,12 +19,14 @@ enum Token {
 	tok_identifier = -4, tok_number = -5
 };
 
+// removed static so its visible outside this header
+
 // global vars; tutorial says this is not pretty :)
-static std::string IdentifierStr; // if tok_identifier
-static double NumVal; // if tok_number
+std::string IdentifierStr; // if tok_identifier
+double NumVal; // if tok_number
 
 // the actual lexer
-static int gettok() {
+int gettok() {
 	static int LastChar = ' ';
 	
 	// skip whitespace
@@ -78,10 +84,4 @@ static int gettok() {
 	return ThisChar;
 }
 
-// simple token buffer.
-// all functions should assume that the token that 
-// needs to be parsed is CurTok
-static int CurTok;
-static int getNextToken() {
-	return CurTok = gettok();
-}
+#endif

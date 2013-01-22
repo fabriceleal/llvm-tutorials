@@ -4,7 +4,7 @@ TARGET=main.o
 
 .PHONY=clean
 
-$(TARGET): main.cc
+$(TARGET): main.cc ast.cc
 	g++ $? -o $@ $(FLAGS)
 
 clean:

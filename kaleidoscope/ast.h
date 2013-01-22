@@ -2,7 +2,20 @@
 // from http://llvm.org/releases/2.8/docs/tutorial/LangImpl2.html
 #include <string>
 #include <vector>
+#include <map>
 #include "lexer.h"
+
+#ifndef DEF_KALEID_AST
+#define DEF_KALEID_AST
+
+// simple token buffer.
+// all functions should assume that the token that 
+// needs to be parsed is CurTok
+static int CurTok;
+static int getNextToken() {
+	return CurTok = gettok();
+}
+
 
 // Base class for all expression nodes
 // All values are double, so no need for "type" field
@@ -75,3 +88,43 @@ FunctionAST* ErrorF(const char* Str) {
 	Error(Str);
 	return 0;
 }
+
+// Basic Expression Parsing
+
+// numberexpr :: = number
+static ExprAST* ParseNumberExpr();
+
+// parenexpr ::= '(' expression ')'
+static ExprAST* ParseParenExpr();
+
+// identifierexpr
+//    ::= identifier
+//    ::= identifier '(' expression* ')'
+static ExprAST *ParseIdentifierExpr();
+
+static ExprAST* ParsePrimary();
+
+static ExprAST* ParseExpression();
+
+static ExprAST* ParseBinOpRHS(int ExprPrec, ExprAST *LHS);
+
+static PrototypeAST* ParsePrototype();
+
+static FunctionAST* ParseDefinition();
+
+static PrototypeAST* ParseExtern();
+
+static FunctionAST* ParseTopLevelExpr();
+
+// Binary Expression Parsing
+
+// Filled in main
+std::map<char, int> KBinopPrecedence;
+
+static int GetTokPrecedence();
+
+// Top level parsing
+
+void MainLoop();
+
+#endif
