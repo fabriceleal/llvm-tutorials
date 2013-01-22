@@ -1,11 +1,19 @@
 FLAGS=`llvm-config --cxxflags --ldflags --libs core`
 
-TARGET=main.o
+TARGET=main
 
-.PHONY=clean
+.PHONY=clean all
 
-$(TARGET): main.cc ast.cc
+all: main
+
+ast.o: ast.cc
+	g++ -c $?
+
+main.o: main.cc
+	g++ -c $?
+
+$(TARGET): main.o ast.o
 	g++ $? -o $@ $(FLAGS)
 
 clean:
-	rm -f $(TARGET)
+	rm -f *.o $(TARGET)

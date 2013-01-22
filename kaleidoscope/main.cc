@@ -2,8 +2,10 @@
  This tutorial implements the lexer / parser manually. Cool ... NOT
  */
 
-#include "lexer.h"
+#include <stdio.h>
 #include "ast.h"
+
+extern std::map<char, int> KBinopPrecedence;
 
 int main(int argc, char** argv) {
 	// Fill precedence table

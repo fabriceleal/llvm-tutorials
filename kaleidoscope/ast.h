@@ -1,21 +1,14 @@
 // The AST
 // from http://llvm.org/releases/2.8/docs/tutorial/LangImpl2.html
-#include <string>
-#include <vector>
-#include <map>
-#include "lexer.h"
 
 #ifndef DEF_KALEID_AST
 #define DEF_KALEID_AST
 
-// simple token buffer.
-// all functions should assume that the token that 
-// needs to be parsed is CurTok
-static int CurTok;
-static int getNextToken() {
-	return CurTok = gettok();
-}
+#include <string>
+#include <vector>
+#include <map>
 
+int getNextToken();
 
 // Base class for all expression nodes
 // All values are double, so no need for "type" field
@@ -71,23 +64,6 @@ class FunctionAST : public ExprAST {
  FunctionAST(PrototypeAST* proto, ExprAST* body) : Proto(proto), Body(body) {}
 };
 
-// Error routines
-// This is not the most sofisticated error handling one can have,
-// but its useful enough
-ExprAST* Error(const char* Str) {
-	fprintf(stderr, "Error: %s\n", Str);
-	return 0;
-}
-
-PrototypeAST* ErrorP(const char* Str) {
-	Error(Str);
-	return 0;
-}
-
-FunctionAST* ErrorF(const char* Str) {
-	Error(Str);
-	return 0;
-}
 
 // Basic Expression Parsing
 
@@ -117,9 +93,6 @@ static PrototypeAST* ParseExtern();
 static FunctionAST* ParseTopLevelExpr();
 
 // Binary Expression Parsing
-
-// Filled in main
-std::map<char, int> KBinopPrecedence;
 
 static int GetTokPrecedence();
 
