@@ -77,3 +77,11 @@ static int gettok() {
 	LastChar = getchar();
 	return ThisChar;
 }
+
+// simple token buffer.
+// all functions should assume that the token that 
+// needs to be parsed is CurTok
+static int CurTok;
+static int getNextToken() {
+	return CurTok = gettok();
+}

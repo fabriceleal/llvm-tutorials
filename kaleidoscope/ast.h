@@ -2,6 +2,7 @@
 // from http://llvm.org/releases/2.8/docs/tutorial/LangImpl2.html
 #include <string>
 #include <vector>
+#include "lexer.h"
 
 // Base class for all expression nodes
 // All values are double, so no need for "type" field
@@ -56,3 +57,21 @@ class FunctionAST : public ExprAST {
  public:
  FunctionAST(PrototypeAST* proto, ExprAST* body) : Proto(proto), Body(body) {}
 };
+
+// Error routines
+// This is not the most sofisticated error handling one can have,
+// but its useful enough
+ExprAST* Error(const char* Str) {
+	fprintf(stderr, "Error: %s\n", Str);
+	return 0;
+}
+
+PrototypeAST* ErrorP(const char* Str) {
+	Error(Str);
+	return 0;
+}
+
+FunctionAST* ErrorF(const char* Str) {
+	Error(Str);
+	return 0;
+}
