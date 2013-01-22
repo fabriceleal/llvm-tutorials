@@ -22,6 +22,9 @@ int main(int argc, char** argv) {
 
 	TheModule = new Module("cool jit", getGlobalContext());
 
+	// Create passes (for optimizations)
+	// TODO http://llvm.org/releases/2.8/docs/tutorial/LangImpl4.html
+
   // Run the main "interpreter loop" now.
   MainLoop();
 
