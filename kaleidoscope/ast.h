@@ -4,9 +4,16 @@
 #ifndef DEF_KALEID_AST
 #define DEF_KALEID_AST
 
+//#include <llvm/DerivedTypes.h>
+//#include <llvm/LLVMContext.h>
+//#include <llvm/Module.h>
+//#include <llvm/Analysis/Verifier.h>
+#include <llvm/Support/IRBuilder.h>
 #include <string>
 #include <vector>
 #include <map>
+
+using namespace llvm;
 
 int getNextToken();
 
@@ -15,7 +22,7 @@ int getNextToken();
 class ExprAST {
 public:
 	virtual ~ExprAST() {};
-	virtual Value *Codegen() = 0;
+	virtual Value* Codegen() = 0;
 };
 
 // Number AST - for numberals like "1.0"
@@ -23,13 +30,14 @@ class NumberExprAST : public ExprAST {
 	double Val;
 public:
 	NumberExprAST(double val) : Val(val) {}
-	virtual Value *Codegen();
+	virtual Value* Codegen();
 };
 
 class VariableExprAST : public ExprAST {
 	std::string Name;
 public:
  VariableExprAST(const std::string &name) : Name(name) {};
+	virtual Value* Codegen();
 };
 
 // for binary ops: + - * /
@@ -39,6 +47,8 @@ class BinaryExprAST : public ExprAST {
 public:
  BinaryExprAST(char op, ExprAST* lhs, ExprAST* rhs) :
 	Op(op), LHS(lhs), RHS(rhs) {}
+
+	virtual Value* Codegen();
 };
 
 // for function calls
@@ -47,25 +57,36 @@ class CallExprAST : public ExprAST {
 	std::vector<ExprAST*> Args;
  public:
  CallExprAST(const std::string &callee, std::vector<ExprAST*> &args) : Callee(callee), Args(args) {}
+	virtual Value* Codegen();
 };
 
 // "prototype" or a function - 
 // captures name, argument names (thus implicity the number of args)
-class PrototypeAST : public ExprAST {
+class PrototypeAST {
 	std::string Name;
 	std::vector<std::string> Args;
  public:
  PrototypeAST(const std::string &name, const std::vector<std::string> &args) : Name(name), Args(args) {}
+
+	Function* Codegen();
 };
 
 // Function definition
-class FunctionAST : public ExprAST {
+class FunctionAST {
 	PrototypeAST* Proto;
 	ExprAST* Body;
  public:
  FunctionAST(PrototypeAST* proto, ExprAST* body) : Proto(proto), Body(body) {}
+
+	Function* Codegen();
 };
 
+
+ExprAST* Error(const char* Str);
+
+PrototypeAST* ErrorP(const char* Str);
+
+FunctionAST* ErrorF(const char* Str);
 
 // Basic Expression Parsing
 

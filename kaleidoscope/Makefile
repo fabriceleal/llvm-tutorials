@@ -6,14 +6,14 @@ TARGET=main
 
 all: main
 
-ast.o: ast.cc
-	g++ $(FLAGS) -c $?
+#ast.o: ast.cc llvm_stuff.cc
+#	g++ $(FLAGS) $? -o $@
 
-main.o: main.cc
-	g++ $(FLAGS) -c $?
+#main.o: main.cc
+#	g++ $(FLAGS) $? -o $@
 
-$(TARGET): main.o ast.o
-	g++ $? -o $@ $(FLAGS)
+$(TARGET): main.cc ast.cc
+	g++ -g -O3 $? $(FLAGS) -o $@
 
 clean:
 	rm -f *.o $(TARGET)
