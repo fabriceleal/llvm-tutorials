@@ -7,10 +7,10 @@ TARGET=main
 all: main
 
 ast.o: ast.cc
-	g++ -c $?
+	g++ $(FLAGS) -c $?
 
 main.o: main.cc
-	g++ -c $?
+	g++ $(FLAGS) -c $?
 
 $(TARGET): main.o ast.o
 	g++ $? -o $@ $(FLAGS)

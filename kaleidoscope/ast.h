@@ -15,6 +15,7 @@ int getNextToken();
 class ExprAST {
 public:
 	virtual ~ExprAST() {};
+	virtual Value *Codegen() = 0;
 };
 
 // Number AST - for numberals like "1.0"
@@ -22,6 +23,7 @@ class NumberExprAST : public ExprAST {
 	double Val;
 public:
 	NumberExprAST(double val) : Val(val) {}
+	virtual Value *Codegen();
 };
 
 class VariableExprAST : public ExprAST {
