@@ -5,7 +5,7 @@
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <stdio.h>
-#include "ast.h"
+#include "kaleidoscope.hpp"
 
 extern std::map<char, int> KBinopPrecedence;
 extern Module* TheModule;

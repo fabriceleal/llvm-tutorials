@@ -12,7 +12,7 @@ all: main
 #main.o: main.cc
 #	g++ $(FLAGS) $? -o $@
 
-$(TARGET): main.cc ast.cc
+$(TARGET): main.cc ast.cc gen.cc
 	g++ -g -O3 $? $(FLAGS) -o $@
 
 clean:
