@@ -24,6 +24,9 @@ FunctionPassManager *TheFPM;
 ExecutionEngine *TheExecutionEngine;
 
 int main(int argc, char** argv) {
+	// This is needed by the JIT
+	InitializeNativeTarget();
+
 	// Fill precedence table
 	KBinopPrecedence['<'] = 10;
 	KBinopPrecedence['+'] = 20;
@@ -36,7 +39,12 @@ int main(int argc, char** argv) {
 	TheModule = new Module("cool jit", getGlobalContext());
 
 	// Create a JIT. Taks ownership of the module
-	TheExecutionEngine = EngineBuilder(TheModule).create();
+	std::string ErrStr;
+	TheExecutionEngine = EngineBuilder(TheModule).setErrorStr(&ErrStr).create();
+	if(!TheExecutionEngine) {
+		fprintf(stderr, "Could not create ExecutionEngine: %s\n", ErrStr.c_str());
+		exit(-1);
+	}
 
 	// Set up optimizing pipeline
 	FunctionPassManager OurFPM(TheModule);
@@ -50,6 +58,7 @@ int main(int argc, char** argv) {
   OurFPM.add(createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
   OurFPM.add(createCFGSimplificationPass());
+
   OurFPM.doInitialization();
 
   // Set the global so the code gen can use this.
@@ -57,6 +66,8 @@ int main(int argc, char** argv) {
 
   // Run the main "interpreter loop" now.
   MainLoop();
+
+	TheFPM = 0;
 
 	TheModule->dump();
 

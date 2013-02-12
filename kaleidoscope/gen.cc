@@ -135,7 +135,9 @@ Function* FunctionAST::Codegen() {
 		verifyFunction(*TheFunction);
 
 		// optimize function!
+		fprintf(stderr, "Optimizing function ...\n");
 		TheFPM->run(*TheFunction);
+		fprintf(stderr, "Function optimized...\n");
 
 		return TheFunction;
 	}

@@ -15,3 +15,14 @@ http://llvm.org/releases/2.8/docs/tutorial/LangImpl3.html
 Code generation to LLVM IR
 Review, comment. There's a bug somewhere (the tut says so), try to fix it ...
 
+http://llvm.org/releases/2.8/docs/tutorial/LangImpl4.html
+Ask how do you say that to the JIT/optimizer that an operation is commutative.
+For instance, the code generated for:
+```
+def test(x) (1+2+x)*(x+(1+2));
+```
+the code is optimized correctly, but this one
+```
+def test(x) (1+2+x)*(x+1+2);
+```
+doesnt.

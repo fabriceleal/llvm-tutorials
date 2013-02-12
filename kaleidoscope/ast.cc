@@ -317,13 +317,16 @@ static void HandleExtern() {
 static void HandleTopLevelExpression() {
   // Evaluate a top-level expression into an anonymous function.
   if (FunctionAST* F = ParseTopLevelExpr()) {
+		//fprintf(stderr, "Parsed a top-level expr\n");
+
 		if(Function* LF = F->Codegen()) {
-			fprintf(stderr, "Parsed a top-level expr\n");
+			fprintf(stderr, "Have code gen\n");
+
 			LF->dump();
 			
 			// JIT the function, return function pointer
 			void *FPtr = TheExecutionEngine->getPointerToFunction(LF);
-			fprintf(stderr, "FPtr is %p", FPtr);
+			//fprintf(stderr, "FPtr is %p\n", FPtr);
 
 			// Cast to right type, so we can call it
 			double (*FP)() = (double(*)()) (intptr_t) FPtr;
