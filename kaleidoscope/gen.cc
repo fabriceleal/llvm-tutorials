@@ -1,8 +1,15 @@
 #include <llvm/DerivedTypes.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
+#include <llvm/PassManager.h>
 #include <llvm/Analysis/Verifier.h>
+#include <llvm/Target/TargetData.h>
+#include <llvm/Target/TargetSelect.h>
+#include <llvm/Transforms/Scalar.h>
 #include <llvm/Support/IRBuilder.h>
+
 #include <string>
 #include <vector>
 #include <map>
@@ -16,6 +23,8 @@
 Module* TheModule;
 static IRBuilder<> Builder(getGlobalContext());
 static std::map<std::string, Value*> NamedValues;
+
+extern FunctionPassManager *TheFPM;
 
 Value* ErrorV(const char* Str) {
 	Error(Str);
@@ -121,8 +130,12 @@ Function* FunctionAST::Codegen() {
 
 	if(Value* RetVal = Body->Codegen()) {
 		Builder.CreateRet(RetVal);
-		
+
+		// Validate (check consistency)
 		verifyFunction(*TheFunction);
+
+		// optimize function!
+		TheFPM->run(*TheFunction);
 
 		return TheFunction;
 	}

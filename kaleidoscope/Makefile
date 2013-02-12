@@ -1,4 +1,4 @@
-FLAGS=`llvm-config --cxxflags --ldflags --libs core`
+FLAGS=`llvm-config --cxxflags --ldflags --libs core jit native`
 
 TARGET=main
 
@@ -13,7 +13,7 @@ all: main
 #	g++ $(FLAGS) $? -o $@
 
 $(TARGET): main.cc ast.cc gen.cc
-	g++ -g -O3 $? $(FLAGS) -o $@
+	g++ -g -O3 -rdynamic $? $(FLAGS) -o $@
 
 clean:
 	rm -f *.o $(TARGET)

@@ -1,3 +1,5 @@
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JIT.h"
 #include <llvm/DerivedTypes.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
@@ -12,6 +14,7 @@
 
 // Filled in main
 std::map<char, int> KBinopPrecedence;
+extern ExecutionEngine *TheExecutionEngine;
 
 // LEXER
 // from http://llvm.org/releases/2.8/docs/tutorial/LangImpl1.html
@@ -317,6 +320,14 @@ static void HandleTopLevelExpression() {
 		if(Function* LF = F->Codegen()) {
 			fprintf(stderr, "Parsed a top-level expr\n");
 			LF->dump();
+			
+			// JIT the function, return function pointer
+			void *FPtr = TheExecutionEngine->getPointerToFunction(LF);
+			fprintf(stderr, "FPtr is %p", FPtr);
+
+			// Cast to right type, so we can call it
+			double (*FP)() = (double(*)()) (intptr_t) FPtr;
+			fprintf(stderr, "Evaluated to %f\n", FP());
 		}
   } else {
     // Skip token for error recovery.
