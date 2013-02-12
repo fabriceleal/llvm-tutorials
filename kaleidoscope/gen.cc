@@ -60,6 +60,135 @@ Value* BinaryExprAST::Codegen() {
 }
 }
 
+Value* IfExprAST::Codegen() {
+	//	return (Value*) 0;
+	Value *CondV = Cond->Codegen();
+  if (CondV == 0) return 0;
+  
+  // Convert condition to a bool by comparing equal to 0.0.
+  CondV = Builder.CreateFCmpONE(CondV, 
+																ConstantFP::get(getGlobalContext(), APFloat(0.0)),
+                                "ifcond");
+	
+	Function *TheFunction = Builder.GetInsertBlock()->getParent();
+  
+  // Create blocks for the then and else cases.  Insert the 'then' block at the
+  // end of the function.
+  BasicBlock *ThenBB = BasicBlock::Create(getGlobalContext(), "then", TheFunction);
+  BasicBlock *ElseBB = BasicBlock::Create(getGlobalContext(), "else");
+  BasicBlock *MergeBB = BasicBlock::Create(getGlobalContext(), "ifcont");
+
+  Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+	
+  // Emit then value.
+  Builder.SetInsertPoint(ThenBB);
+  
+  Value *ThenV = Then->Codegen();
+  if (ThenV == 0) return 0;
+  
+  Builder.CreateBr(MergeBB);
+  // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+  ThenBB = Builder.GetInsertBlock();
+
+	// Emit else block.
+  TheFunction->getBasicBlockList().push_back(ElseBB);
+  Builder.SetInsertPoint(ElseBB);
+  
+  Value *ElseV = Else->Codegen();
+  if (ElseV == 0) return 0;
+  
+  Builder.CreateBr(MergeBB);
+  // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+  ElseBB = Builder.GetInsertBlock();
+	
+  // Emit merge block.
+  TheFunction->getBasicBlockList().push_back(MergeBB);
+  Builder.SetInsertPoint(MergeBB);
+  PHINode *PN = Builder.CreatePHI(Type::getDoubleTy(getGlobalContext()),
+                                  "iftmp");
+  
+  PN->addIncoming(ThenV, ThenBB);
+  PN->addIncoming(ElseV, ElseBB);
+  return PN;
+}
+
+Value* ForExprAST::Codegen() {
+	// Emit the start code first, without 'variable' in scope.
+  Value *StartVal = Start->Codegen();
+  if (StartVal == 0) return 0;
+	
+	// Make the new basic block for the loop header, inserting after current
+  // block.
+  Function *TheFunction = Builder.GetInsertBlock()->getParent();
+  BasicBlock *PreheaderBB = Builder.GetInsertBlock();
+  BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+  
+  // Insert an explicit fall through from the current block to the LoopBB.
+  Builder.CreateBr(LoopBB);
+
+	// Start insertion in LoopBB.
+  Builder.SetInsertPoint(LoopBB);
+  
+  // Start the PHI node with an entry for Start.
+  PHINode *Variable = Builder.CreatePHI(Type::getDoubleTy(getGlobalContext()), VarName.c_str());
+  Variable->addIncoming(StartVal, PreheaderBB);
+		
+  // Within the loop, the variable is defined equal to the PHI node.  If it
+  // shadows an existing variable, we have to restore it, so save it now.
+  Value *OldVal = NamedValues[VarName];
+  NamedValues[VarName] = Variable;
+  
+  // Emit the body of the loop.  This, like any other expr, can change the
+  // current BB.  Note that we ignore the value computed by the body, but don't
+  // allow an error.
+  if (Body->Codegen() == 0)
+    return 0;
+	
+	// Emit the step value.
+  Value *StepVal;
+  if (Step) {
+    StepVal = Step->Codegen();
+    if (StepVal == 0) return 0;
+  } else {
+    // If not specified, use 1.0.
+    StepVal = ConstantFP::get(getGlobalContext(), APFloat(1.0));
+  }
+  
+  Value *NextVar = Builder.CreateFAdd(Variable, StepVal, "nextvar");
+
+	// Compute the end condition.
+  Value *EndCond = End->Codegen();
+  if (EndCond == 0) return EndCond;
+  
+  // Convert condition to a bool by comparing equal to 0.0.
+  EndCond = Builder.CreateFCmpONE(EndCond, 
+																	ConstantFP::get(getGlobalContext(), APFloat(0.0)),
+                                  "loopcond");
+
+	// Create the "after loop" block and insert it.
+  BasicBlock *LoopEndBB = Builder.GetInsertBlock();
+  BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
+  
+  // Insert the conditional branch into the end of LoopEndBB.
+  Builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+  
+  // Any new code will be inserted in AfterBB.
+  Builder.SetInsertPoint(AfterBB);
+	
+  // Add a new entry to the PHI node for the backedge.
+  Variable->addIncoming(NextVar, LoopEndBB);
+  
+  // Restore the unshadowed variable.
+  if (OldVal)
+    NamedValues[VarName] = OldVal;
+  else
+    NamedValues.erase(VarName);
+  
+  // for expr always returns 0.0.
+  return Constant::getNullValue(Type::getDoubleTy(getGlobalContext()));
+	//return 0;
+}
+
 Value* CallExprAST::Codegen() {
 	Function* CalleeF = TheModule->getFunction(Callee);
 	if(CalleeF == 0) {

@@ -60,6 +60,24 @@ class CallExprAST : public ExprAST {
 	virtual Value* Codegen();
 };
 
+class IfExprAST: public ExprAST {
+	ExprAST *Cond, *Then, *Else;
+public:
+	IfExprAST(ExprAST *cond, ExprAST *then, ExprAST* _else) : 
+		Cond(cond), Then(then), Else(_else) {}
+	virtual Value *Codegen();
+};
+
+class ForExprAST : public ExprAST {
+	std::string VarName;
+  ExprAST *Start, *End, *Step, *Body;
+public:
+  ForExprAST(const std::string &varname, ExprAST *start, ExprAST *end,
+             ExprAST *step, ExprAST *body)
+    : VarName(varname), Start(start), End(end), Step(step), Body(body) {}
+  virtual Value *Codegen();
+};
+
 // "prototype" or a function - 
 // captures name, argument names (thus implicity the number of args)
 class PrototypeAST {

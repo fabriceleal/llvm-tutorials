@@ -26,3 +26,6 @@ the code is optimized correctly, but this one
 def test(x) (1+2+x)*(x+1+2);
 ```
 doesnt.
+
+http://llvm.org/releases/2.8/docs/tutorial/LangImpl5.html
+Review, comment

@@ -26,7 +26,13 @@ enum Token {
 	tok_def = -2, tok_extern = -3,
 
 	// primary
-	tok_identifier = -4, tok_number = -5
+	tok_identifier = -4, tok_number = -5,
+
+	// control
+	tok_if = -6, tok_then = -7, tok_else = -8,
+
+	// for
+	tok_for = -9, tok_in = -10
 };
 
 // removed static so its visible outside this header
@@ -57,6 +63,23 @@ int gettok() {
 		}
 		if(IdentifierStr == "extern") {
 			return tok_extern;
+		}
+
+		if(IdentifierStr == "if") {
+			return tok_if;
+		}
+		if(IdentifierStr == "then") {
+			return tok_then;
+		}
+		if(IdentifierStr == "else") {
+			return tok_else;
+		}
+
+		if(IdentifierStr == "for") {
+			return tok_for;
+		}
+		if(IdentifierStr == "in") {
+			return tok_in;
 		}
 
 		return tok_identifier;
@@ -123,6 +146,11 @@ FunctionAST* ErrorF(const char* Str) {
 	return 0;
 }
 
+ForExprAST* ErrorFor(const char* Str) {
+	Error(Str);
+	return 0;
+}
+
 static ExprAST* ParseNumberExpr() {
 	ExprAST* Result = new NumberExprAST(NumVal);
 	// Consume number
@@ -175,12 +203,80 @@ static ExprAST *ParseIdentifierExpr() {
 	return new CallExprAST(IdName, Args);
 }
 
+static ExprAST* ParseIfExpr() {
+	getNextToken(); // eat if
+
+	ExprAST *Cond = ParseExpression();
+	if(!Cond) return 0;
+	//	getNextToken();
+
+	if(CurTok != tok_then)
+		return Error("expected then");
+	getNextToken(); // eat then
+	
+	ExprAST *Then = ParseExpression();
+	if(!Then) return 0;
+
+	if(CurTok != tok_else)
+		return Error("expected else");
+	getNextToken();
+	
+	ExprAST *Else = ParseExpression();
+	if(!Else) return 0;
+	
+	return new IfExprAST(Cond, Then, Else);
+}
+
+static ForExprAST* ParseForExpr() {
+	getNextToken();  // eat the for.
+
+  if (CurTok != tok_identifier)
+    return ErrorFor("expected identifier after for");
+  
+	std::string IdName = IdentifierStr;
+  getNextToken();  // eat identifier.
+  
+  if (CurTok != '=')
+    return ErrorFor("expected '=' after for");
+  getNextToken();  // eat '='.
+  
+  
+  ExprAST *Start = ParseExpression();
+  if (Start == 0) return 0;
+  if (CurTok != ',')
+    return ErrorFor("expected ',' after for start value");
+  getNextToken();
+  
+  ExprAST *End = ParseExpression();
+  if (End == 0) return 0;
+  
+  // The step value is optional.
+  ExprAST *Step = 0;
+  if (CurTok == ',') {
+    getNextToken();
+    Step = ParseExpression();
+    if (Step == 0) return 0;
+  }
+  
+  if (CurTok != tok_in)
+    return ErrorFor("expected 'in' after for");
+  getNextToken();  // eat 'in'.
+  
+  ExprAST *Body = ParseExpression();
+  if (Body == 0) return 0;
+
+  return new ForExprAST(IdName, Start, End, Step, Body);
+}
+
 static ExprAST* ParsePrimary() {
+	//fprintf(stderr, "Token: %d\n", CurTok);
 	switch(CurTok) {
 	default: return Error("unknown token when expecting an expression");
 	case tok_identifier:return ParseIdentifierExpr();
 	case tok_number: return ParseNumberExpr();
 	case '(': return ParseParenExpr();
+	case tok_if: return ParseIfExpr();
+	case tok_for: return ParseForExpr();
 	}
 }
 
