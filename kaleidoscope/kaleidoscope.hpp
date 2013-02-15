@@ -51,6 +51,15 @@ public:
 	virtual Value* Codegen();
 };
 
+class UnaryExprAST : public ExprAST {
+	char Opcode;
+	ExprAST* Operand;
+public:
+	UnaryExprAST(char opcode, ExprAST* operand) : Opcode(opcode), Operand(operand) { }
+	
+	virtual Value* Codegen();
+};
+
 // for function calls
 class CallExprAST : public ExprAST {
 	std::string Callee;
@@ -83,8 +92,23 @@ public:
 class PrototypeAST {
 	std::string Name;
 	std::vector<std::string> Args;
+	bool isOperator;
+	unsigned Precedence;
  public:
- PrototypeAST(const std::string &name, const std::vector<std::string> &args) : Name(name), Args(args) {}
+
+	PrototypeAST(const std::string &name, const std::vector<std::string> &args,
+							 bool isoperator = false, unsigned prec = 0) : 
+		Name(name), Args(args), isOperator(isoperator), Precedence(prec) {}
+
+	bool isUnaryOp() const { return isOperator && Args.size() == 1; }
+	bool isBinaryOp() const { return isOperator && Args.size() == 2; }
+
+	char getOperatorName() const  {
+		assert(isUnaryOp() || isBinaryOp());
+		return Name[Name.size() - 1];
+	}
+
+	unsigned getBinaryPrecedence() const { return Precedence; }
 
 	Function* Codegen();
 };
@@ -118,6 +142,8 @@ static ExprAST* ParseParenExpr();
 //    ::= identifier
 //    ::= identifier '(' expression* ')'
 static ExprAST *ParseIdentifierExpr();
+
+static ExprAST* ParseUnary();
 
 static ExprAST* ParsePrimary();
 

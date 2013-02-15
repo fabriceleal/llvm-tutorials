@@ -40,24 +40,47 @@ Value* VariableExprAST::Codegen() {
 	return V ? V : ErrorV("Unknown variable name");
 }
 
+Value* UnaryExprAST::Codegen() {
+	Value* OperandV = Operand->Codegen();
+	if(OperandV == 0)
+		return 0;
+
+	Function* F = TheModule->getFunction(std::string("unary") + Opcode);
+	if(F == 0) {
+		return ErrorV("Unknown unary operator");
+	}
+
+	return Builder.CreateCall(F, OperandV, "unop");
+}
+
 Value* BinaryExprAST::Codegen() {
 	Value* L = LHS->Codegen();
 	Value* R = RHS->Codegen();
-
+	
 	if(L == 0 || R == 0) {
 		return 0;
 	}
-
+	
 	switch(Op) {
 	case '+': return Builder.CreateFAdd(L, R, "addtmp");
 	case '-': return Builder.CreateFSub(L, R, "subtmp");
 	case '*': return Builder.CreateFMul(L, R, "multmp");
 	case '<':
 		L = Builder.CreateFCmpULT(L, R, "cmptmp");
+		// Convert bool false/true to 0.0/1.0
 		return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()), 
-														 "booltmp");
-	default: return ErrorV("Invalid binary operator");
-}
+																"booltmp");
+	default: break; //return ErrorV("Invalid binary operator");
+	}
+	
+	// If it wasnt a builtin binary operator, is must be a user defined one
+	// emit code to call it
+	Function *F = TheModule->getFunction(std::string("binary") + Op);
+	assert(F && "binary operator not found");
+	
+	//Value* Ops[2] = { L, R };
+	//return Builder.CreateCall(F, Ops, "binop");
+	return Builder.CreateCall2(F, L, R, "binop");
 }
 
 Value* IfExprAST::Codegen() {
@@ -246,6 +269,8 @@ Function* PrototypeAST::Codegen() {
 	return F;
 }
 
+extern std::map<char, int> KBinopPrecedence;
+
 Function* FunctionAST::Codegen() {
 	NamedValues.clear();
 	
@@ -254,6 +279,12 @@ Function* FunctionAST::Codegen() {
 		return 0;
 	}
 
+	// If this is an operator, install it
+	if(Proto->isBinaryOp()) {
+		KBinopPrecedence[Proto->getOperatorName()] = Proto->getBinaryPrecedence();
+	}
+
+	// Create a new basic block to start insert into.
 	BasicBlock* BB = BasicBlock::Create(getGlobalContext(), "entry", TheFunction);
 	Builder.SetInsertPoint(BB);
 

@@ -32,7 +32,10 @@ enum Token {
 	tok_if = -6, tok_then = -7, tok_else = -8,
 
 	// for
-	tok_for = -9, tok_in = -10
+	tok_for = -9, tok_in = -10,
+
+	// operators
+	tok_binary = -11, tok_unary = -12
 };
 
 // removed static so its visible outside this header
@@ -80,6 +83,13 @@ int gettok() {
 		}
 		if(IdentifierStr == "in") {
 			return tok_in;
+		}
+
+		if(IdentifierStr == "binary") {
+			return tok_binary;
+		}
+		if(IdentifierStr == "unary") {
+			return tok_unary;
 		}
 
 		return tok_identifier;
@@ -294,7 +304,7 @@ static int GetTokPrecedence() {
 }
 
 static ExprAST* ParseExpression() {
-	ExprAST *LHS = ParsePrimary();
+	ExprAST *LHS = ParseUnary();
 	if(!LHS) return 0;
 
 	return ParseBinOpRHS(0, LHS);
@@ -311,8 +321,8 @@ static ExprAST* ParseBinOpRHS(int ExprPrec, ExprAST *LHS) {
 		int BinOp = CurTok;
 		getNextToken(); // eat binop
 
-		// parse primary expression after binary operation
-		ExprAST* RHS = ParsePrimary();
+		// parse unary (it used to be primary) expression after binary operation
+		ExprAST* RHS = ParseUnary();
 		if(!RHS) return 0;
 
 		// if binop binds less tightly with RHS than the operator
@@ -330,29 +340,98 @@ static ExprAST* ParseBinOpRHS(int ExprPrec, ExprAST *LHS) {
 // Parsing the Rest
 
 static PrototypeAST* ParsePrototype() {
-	if(CurTok != tok_identifier) {
+	/*
+	 * id '(' id* ')'
+	 * binary LETTER number? (id, id)
+	 * unary LETTER (id)
+	 */
+
+	/*
+	 * 0 = identifier
+	 * 1 = unary
+	 * 2 = binary
+	 */
+	std::string FnName;
+	unsigned Kind = 0; 
+	unsigned BinaryPrecedence = 30;
+	
+	switch(CurTok) {
+		// If this is at the end, doesnt work as intended
+	default:
 		return ErrorP("Expected function name in prototype");
+	case tok_identifier:
+		FnName = IdentifierStr;
+		Kind = 0;
+		getNextToken();
+		break;
+	case tok_unary:
+		getNextToken();
+		if(!isascii(CurTok)) {
+			return ErrorP("Expected unary operator.");
+		}
+		FnName = "unary";
+		FnName += (char)CurTok;
+		Kind = 1;
+		getNextToken();
+		break;
+	case tok_binary:
+		getNextToken();
+		if(!isascii(CurTok)) {
+			return ErrorP("Expected binary prototype.");
+		}
+		FnName = "binary";
+		FnName += (char) CurTok;
+		Kind = 2;
+		getNextToken();
+
+		// Read the precedence if present
+		if(CurTok == tok_number) {
+			if(NumVal < 1 || NumVal > 100) {
+				return ErrorP("Invalid precedence: must 1..100");				
+			}
+			BinaryPrecedence = (unsigned) NumVal;
+			getNextToken();
+		}
 	}
 
-	std::string FnName = IdentifierStr;
-	getNextToken();
-
-	if(CurTok != '(') {
+	if(CurTok != '(')  {
 		return ErrorP("Expected '(' in prototype");
 	}
-
+	
 	std::vector<std::string> ArgNames;
 	while(getNextToken() == tok_identifier) {
 		ArgNames.push_back(IdentifierStr);
 	}
-
 	if(CurTok != ')') {
 		return ErrorP("Expected ')' in prototype");
 	}
 
+	// success
+	// eat ')'
 	getNextToken();
 
-	return new PrototypeAST(FnName, ArgNames);
+	// Verify right nbr of names for operator
+	if(Kind && ArgNames.size() != Kind) {
+		return ErrorP("Invalid number of operands for operator");
+	}
+
+	return new PrototypeAST(FnName, ArgNames, Kind != 0, BinaryPrecedence);
+}
+
+static ExprAST* ParseUnary() {
+	// if current token is not an operator, it must be a primary expr
+	if(!isascii(CurTok) || CurTok == '(' || CurTok == ',') {
+		return ParsePrimary();
+	}
+
+	// if its a unary operator, read it
+	int Opc = CurTok;
+	getNextToken();
+	if(ExprAST* Operand = ParseUnary()) {
+		return new UnaryExprAST(Opc, Operand);
+	}
+
+	return 0;
 }
 
 // definition ::= 'def' prototype expression
@@ -432,6 +511,11 @@ static void HandleTopLevelExpression() {
     // Skip token for error recovery.
     getNextToken();
   }
+}
+
+extern "C" double printd(double x) {
+	printf("%f", x);
+	return 0.0;
 }
 
 extern "C" double putchard(double X) {
