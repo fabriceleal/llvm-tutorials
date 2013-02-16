@@ -29,3 +29,6 @@ doesnt.
 
 http://llvm.org/releases/2.8/docs/tutorial/LangImpl5.html
 Review, comment
+
+http://llvm.org/releases/2.8/docs/tutorial/LangImpl6.html
+Review, comment, test
