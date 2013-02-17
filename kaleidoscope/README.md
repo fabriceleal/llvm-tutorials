@@ -32,3 +32,7 @@ Review, comment
 
 http://llvm.org/releases/2.8/docs/tutorial/LangImpl6.html
 Review, comment, test
+
+http://llvm.org/releases/2.8/docs/tutorial/LangImpl7.html
+Review, comment, test
+
