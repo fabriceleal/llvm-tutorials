@@ -35,7 +35,10 @@ enum Token {
 	tok_for = -9, tok_in = -10,
 
 	// operators
-	tok_binary = -11, tok_unary = -12
+	tok_binary = -11, tok_unary = -12,
+
+	// var
+	tok_var = -13
 };
 
 // removed static so its visible outside this header
@@ -90,6 +93,10 @@ int gettok() {
 		}
 		if(IdentifierStr == "unary") {
 			return tok_unary;
+		}
+
+		if(IdentifierStr == "var") {
+			return tok_var;
 		}
 
 		return tok_identifier;
@@ -177,6 +184,49 @@ static ExprAST* ParseParenExpr() {
 	}
 	getNextToken(); // eat )
 	return V;
+}
+
+static ExprAST *ParseVarExpr() {
+  getNextToken();  // eat the var.
+
+	std::vector<std::pair<std::string, ExprAST*> > VarNames;
+
+  // At least one variable name is required.
+  if (CurTok != tok_identifier)
+    return Error("expected identifier after var");
+
+	while (1) {
+		std::string Name = IdentifierStr;
+    getNextToken();  // eat identifier.
+
+    // Read the optional initializer.
+    ExprAST *Init = 0;
+    if (CurTok == '=') {
+      getNextToken(); // eat the '='.
+      
+      Init = ParseExpression();
+      if (Init == 0) return 0;
+    }
+    
+    VarNames.push_back(std::make_pair(Name, Init));
+    
+    // End of var list, exit loop.
+    if (CurTok != ',') break;
+    getNextToken(); // eat the ','.
+    
+    if (CurTok != tok_identifier)
+      return Error("expected identifier list after var");
+  }
+	
+  // At this point, we have to have 'in'.
+  if (CurTok != tok_in)
+    return Error("expected 'in' keyword after 'var'");
+  getNextToken();  // eat 'in'.
+  
+  ExprAST *Body = ParseExpression();
+  if (Body == 0) return 0;
+  
+  return new VarExprAST(VarNames, Body);
 }
 
 static ExprAST *ParseIdentifierExpr() {
@@ -287,6 +337,7 @@ static ExprAST* ParsePrimary() {
 	case '(': return ParseParenExpr();
 	case tok_if: return ParseIfExpr();
 	case tok_for: return ParseForExpr();
+	case tok_var: return ParseVarExpr();
 	}
 }
 

@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
 	InitializeNativeTarget();
 
 	// Fill precedence table
+	KBinopPrecedence['='] = 2;
 	KBinopPrecedence['<'] = 10;
 	KBinopPrecedence['+'] = 20;
 	KBinopPrecedence['-'] = 20;
@@ -48,8 +49,11 @@ int main(int argc, char** argv) {
 
 	// Set up optimizing pipeline
 	FunctionPassManager OurFPM(TheModule);
-	// Simple "peephole" optimizations and bit-twiddling optzns
+	// Set up the optimizer pipeline.  Start with registering info about how the
+	// target lays out data structures.
 	OurFPM.add(new TargetData(*TheExecutionEngine->getTargetData()));
+	// Promote allocas to registers.
+	OurFPM.add(createPromoteMemoryToRegisterPass());
 	// Simple "peephole" optimizations and bit-twiddling optzns.
   OurFPM.add(createInstructionCombiningPass());
   // Reassociate expressions.

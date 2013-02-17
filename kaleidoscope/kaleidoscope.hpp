@@ -36,8 +36,11 @@ public:
 class VariableExprAST : public ExprAST {
 	std::string Name;
 public:
- VariableExprAST(const std::string &name) : Name(name) {};
+	VariableExprAST(const std::string &name) : Name(name) {};
 	virtual Value* Codegen();
+	std::string getName() const {
+		return Name;
+	}
 };
 
 // for binary ops: + - * /
@@ -87,6 +90,18 @@ public:
   virtual Value *Codegen();
 };
 
+// VarExprAST - Expression class for var/in
+class VarExprAST : public ExprAST {
+	std::vector<std::pair<std::string, ExprAST*> > VarNames;
+  ExprAST *Body;
+public:
+  VarExprAST(const std::vector<std::pair<std::string, ExprAST*> > &varnames,
+             ExprAST *body)
+		: VarNames(varnames), Body(body) {}
+  
+  virtual Value *Codegen();
+};
+
 // "prototype" or a function - 
 // captures name, argument names (thus implicity the number of args)
 class PrototypeAST {
@@ -109,6 +124,8 @@ class PrototypeAST {
 	}
 
 	unsigned getBinaryPrecedence() const { return Precedence; }
+
+	void CreateArgumentAllocas(Function *F);
 
 	Function* Codegen();
 };
